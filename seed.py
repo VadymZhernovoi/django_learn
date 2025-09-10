@@ -69,15 +69,21 @@ SubTasks с просроченным статусом "Done":
 """
 def list_tasks_new():
     tasks = Task.objects.filter(status=Status.NEW)
-    print('Задачи, у которых статус "New"')
-    for task in tasks:
-        print(task.title, task.status, task.deadline, task.description)
+    if tasks:
+        print('Tasks with the status “New”')
+        for task in tasks:
+            print(task.title, task.status, task.deadline, task.description)
+    else:
+        print('asks that do not have the “New” statu')
 
 def list_subtasks_done():
     subtasks = SubTask.objects.filter(status=Status.DONE, deadline__lt=timezone.now())
-    print('Подзадачи, у которых статус "Done", но срок выполнения истек')
-    for subtask in subtasks:
-        print(subtask.title, subtask.status, subtask.deadline, subtask.description)
+    if subtasks:
+        print('Subtasks with the status “Done” but whose deadline has passed.')
+        for subtask in subtasks:
+            print(subtask.title, subtask.status, subtask.deadline, subtask.description)
+    else:
+        print('Subtasks with the status “Done” and an expired deadline are missing.')
 
 """
 Изменение записей:
@@ -102,6 +108,9 @@ def change_subtasks():
 """
 def delete_task_with_subtasks():
     deleted, _ = Task.objects.filter(title="Prepare presentation").delete()
-    print(f'Deleted {deleted} records.')
+    if deleted:
+        print(f'Deleted {deleted} records.')
+    else:
+        print(f'Not deleted records.')
 
 
