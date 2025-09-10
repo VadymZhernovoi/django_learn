@@ -70,11 +70,11 @@ SubTasks с просроченным статусом "Done":
 def list_tasks_new():
     tasks = Task.objects.filter(status=Status.NEW)
     if tasks:
-        print('Tasks with the status “New”')
+        print('Tasks with the status “New”.')
         for task in tasks:
             print(task.title, task.status, task.deadline, task.description)
     else:
-        print('asks that do not have the “New” statu')
+        print('Tasks that do not have the “New” status.')
 
 def list_subtasks_done():
     subtasks = SubTask.objects.filter(status=Status.DONE, deadline__lt=timezone.now())
