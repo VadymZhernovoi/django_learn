@@ -8,7 +8,7 @@ from my_first_app.models import Task, SubTask, Category
 class TaskAdmin(admin.ModelAdmin):
     verbose_name = 'Задача'
     verbose_name_plural = "Задачи"
-    list_display = ('title', 'status', 'deadline', 'created_at')
+    list_display = ('title', 'status', 'deadline', 'created_at', 'list_categories')
     list_editable = ('status', 'deadline')
     search_fields = ('title',)
     list_filter = ('title', 'status', 'deadline')
@@ -17,6 +17,9 @@ class TaskAdmin(admin.ModelAdmin):
     fields = ('title', 'status', 'deadline', 'description', 'categories', 'created_at', )
     list_per_page = 10
 
+    @admin.action(description='Categories')
+    def list_categories(self, obj):
+        return obj.list_categories
 
 @admin.register(SubTask)
 class SubTaskAdmin(admin.ModelAdmin):

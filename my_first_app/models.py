@@ -28,15 +28,22 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
     categories = models.ManyToManyField(Category, related_name="tasks", blank=True)
 
-    def __str__(self):
-        return f'{self.title} ({self.subtasks.count()})'
-
     class Meta:
         db_table = 'task_manager_task'
         verbose_name = 'Задача'
         verbose_name_plural = 'Задачи'
         ordering = ['-created_at']
         unique_together = ('title',)
+
+    @property
+    def list_categories(self):
+        # for category in self.categories.all():
+        #     yield list(category.name)
+
+        return list(self.categories.all())
+
+    def __str__(self):
+        return f'{self.title}'
 
 
 class SubTask(models.Model):
@@ -48,7 +55,7 @@ class SubTask(models.Model):
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.NEW, verbose_name="Статус подзадачи")
     deadline = models.DateTimeField(verbose_name="Дата и время дедлайн")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
-    task = models.ForeignKey(Task, related_name="subtasks", on_delete=models.PROTECT, null=True, verbose_name="Задача")
+    task = models.ForeignKey(Task, related_name="subtasks", on_delete=models.CASCADE, null=True, verbose_name="Задача")
 
     def __str__(self):
         return f'{self.title}, task: {self.task.title}'
