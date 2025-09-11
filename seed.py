@@ -57,26 +57,6 @@ def create_task():
     print(f'Created task "{task.title}", status: {task.status}, deadline: {task.deadline}, deadline: {task.deadline}')
     return task
 
-# def create_subtasks(task, subtask):
-#     # task = Task.objects.get(title="Prepare presentation")
-#     create_subtask(
-#         task=task,
-#         title=subtask['title'],
-#         description=subtask['description'],
-#         status=Status.NEW,
-#         deadline_day=2)
-#     create_subtask(
-#         task=task,
-#         title="Create slides",
-#         description="Create presentation slides",
-#         status=Status.NEW,
-#         deadline_day=1)
-#     create_subtask(
-#         task=task,
-#         title="Subtask with status 'Done' and deadline_day -3",
-#         description="Create presentation slides",
-#         status=Status.DONE,
-#         deadline_day=-3)
 
 def create_subtask(task, subtask):
     print(task, subtask)
