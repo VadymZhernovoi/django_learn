@@ -7,8 +7,9 @@ class Category(models.Model):
     """
     name = models.CharField(max_length=50, verbose_name="Категория выполнения", unique=True)
 
-    def __str__(self):
-        return self.name
+    @property
+    def list_tasks(self):
+        return list(self.tasks.all())
 
     class Meta:
         db_table = 'task_manager_category'
@@ -16,6 +17,8 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
         unique_together = ('name',)
 
+    def __str__(self):
+        return self.name
 
 class Task(models.Model):
     """
@@ -37,10 +40,11 @@ class Task(models.Model):
 
     @property
     def list_categories(self):
-        # for category in self.categories.all():
-        #     yield list(category.name)
-
         return list(self.categories.all())
+
+    @property
+    def list_subtasks(self):
+        return list(self.subtasks.all())
 
     def __str__(self):
         return f'{self.title}'
@@ -57,12 +61,12 @@ class SubTask(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
     task = models.ForeignKey(Task, related_name="subtasks", on_delete=models.CASCADE, null=True, verbose_name="Задача")
 
-    def __str__(self):
-        return f'{self.title}, task: {self.task.title}'
-
     class Meta:
         db_table = 'task_manager_subtask'
         verbose_name = 'Подзадача'
         verbose_name_plural = 'Подзадачи'
         ordering = ['created_at']
         unique_together = ('title',)
+
+    def __str__(self):
+        return f'{self.title}'
