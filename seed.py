@@ -2,11 +2,33 @@ import django
 from django.utils import timezone
 from datetime import timedelta
 from my_first_app.enums import Status
+from django.utils import timezone
+from django.db.models import F
 
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Django_library.settings')
 django.setup()
-from my_first_app.models import Category, Task, SubTask
+from my_first_app.models import Task, SubTask
+subtasks = (
+    {
+    "title": "Gather information",
+    "description": "Find necessary information for the presentation",
+    "status": Status.NEW,
+    "deadline_day": 2
+    },
+    {
+    "title": "Create slides",
+    "description": "Create presentation slides",
+    "status": Status.NEW,
+    "deadline_day": 1
+    },
+    {
+    "title": "Subtask with status 'Done' and deadline_day -3",
+    "description": "fdcefcv ervervf e ",
+    "status": Status.DONE,
+    "deadline_day": 1
+    }
+)
 """
 Создание записей:
 Task:
@@ -35,36 +57,38 @@ def create_task():
     print(f'Created task "{task.title}", status: {task.status}, deadline: {task.deadline}, deadline: {task.deadline}')
     return task
 
-def create_subtasks(task):
-    # task = Task.objects.get(title="Prepare presentation")
-    create_subtask(
-        task=task,
-        title="Gather information",
-        description="Find necessary information for the presentation",
-        status=Status.NEW,
-        deadline_day=2)
-    create_subtask(
-        task=task,
-        title="Create slides",
-        description="Create presentation slides",
-        status=Status.NEW,
-        deadline_day=1)
-    create_subtask(
-        task=task,
-        title="Subtask with status 'Done' and deadline_day -3",
-        description="Create presentation slides",
-        status=Status.DONE,
-        deadline_day=-3)
+# def create_subtasks(task, subtask):
+#     # task = Task.objects.get(title="Prepare presentation")
+#     create_subtask(
+#         task=task,
+#         title=subtask['title'],
+#         description=subtask['description'],
+#         status=Status.NEW,
+#         deadline_day=2)
+#     create_subtask(
+#         task=task,
+#         title="Create slides",
+#         description="Create presentation slides",
+#         status=Status.NEW,
+#         deadline_day=1)
+#     create_subtask(
+#         task=task,
+#         title="Subtask with status 'Done' and deadline_day -3",
+#         description="Create presentation slides",
+#         status=Status.DONE,
+#         deadline_day=-3)
 
-def create_subtask(task, title, description, status, deadline_day):
+def create_subtask(task, subtask):
+    print(task, subtask)
     subtask = SubTask.objects.create(
         task=task,
-        title=title,
-        description=description,
-        status=status,
-        deadline=timezone.now() + timedelta(days=deadline_day),
+        title=subtask["title"],
+        description=subtask["description"],
+        status=subtask["status"],
+        deadline=timezone.now() + timedelta(days=subtask["deadline_day"]),
     )
-    print(f'Created subtask {subtask.title}, task {subtask.task.title}, status: {subtask.status}, deadline: {subtask.deadline}')
+    print(f'Created subtask "{subtask.title}", task "{subtask.task.title}", status: {subtask.status}, deadline: {subtask.deadline}')
+    return subtask
 
 """
 Чтение записей:
@@ -97,16 +121,20 @@ def list_subtasks_done():
 Измените срок выполнения для "Gather information" на два дня назад.
 Измените описание для "Create slides" на "Create and format presentation slides".
 """
-def change_subtasks():
+def change_task():
     Task.objects.filter(title="Prepare presentation").update(status=Status.IN_PROGRESS)
     task = Task.objects.get(title="Prepare presentation")
-    print(f'Updated status "{task.title}" to {Status.IN_PROGRESS}.')
-    SubTask.objects.filter(title="Gather information").update(deadline=timezone.now() - timedelta(days=2))
-    subtask = SubTask.objects.get(title="Gather information")
-    print(f'Updated deadline "{subtask.title}" to {subtask.deadline}.')
-    SubTask.objects.filter(title="Create slides").update(description="Create and format presentation slides")
-    subtask = SubTask.objects.get(title="Create slides")
-    print(f'Updated description "{subtask.title}" to "{subtask.description}."')
+    print(f'Updated task "{task.title}" for status to {Status.IN_PROGRESS}.')
+
+def change_subtasks_1_2(subtask_1, subtask_2):
+    deadline_old = subtask_1.deadline
+    SubTask.objects.filter(title=subtask_1.title).update(deadline=F('deadline') + timedelta(days=-2))
+    subtask_up = SubTask.objects.get(title=subtask_1.title)
+    print(f'Updated subtask "{subtask_1.title}" - older deadline: {deadline_old}, new deadline: {subtask_up.deadline}.')
+    description_old = subtask_2.description
+    SubTask.objects.filter(title=subtask_2.title).update(description="modified: Create and format presentation slides")
+    subtask_up = SubTask.objects.get(title=subtask_2.title)
+    print(f'Updated subtask "{subtask_2.title}" - older description: {description_old}, new description: {subtask_up.description}."')
 
 """
 Удаление записей:
