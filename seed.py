@@ -111,6 +111,7 @@ def change_subtasks_1_2(subtask_1, subtask_2):
     SubTask.objects.filter(title=subtask_1.title).update(deadline=F('deadline') + timedelta(days=-2))
     subtask_up = SubTask.objects.get(title=subtask_1.title)
     print(f'Updated subtask "{subtask_1.title}" - older deadline: {deadline_old}, new deadline: {subtask_up.deadline}.')
+
     description_old = subtask_2.description
     SubTask.objects.filter(title=subtask_2.title).update(description="modified: Create and format presentation slides")
     subtask_up = SubTask.objects.get(title=subtask_2.title)
@@ -122,7 +123,6 @@ def change_subtasks_1_2(subtask_1, subtask_2):
 """
 def delete_task_with_subtasks(task):
     deleted, _ = task.delete()
-    # deleted, _ = Task.objects.filter(title="Prepare presentation").delete()
     if deleted:
         print(f'Deleted {deleted} records.')
     else:
