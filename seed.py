@@ -35,8 +35,8 @@ def create_task():
     print(f'Created task "{task.title}", status: {task.status}, deadline: {task.deadline}, deadline: {task.deadline}')
     return task
 
-def create_subtasks():
-    task = Task.objects.get(title="Prepare presentation")
+def create_subtasks(task):
+    # task = Task.objects.get(title="Prepare presentation")
     create_subtask(
         task=task,
         title="Gather information",
@@ -49,6 +49,12 @@ def create_subtasks():
         description="Create presentation slides",
         status=Status.NEW,
         deadline_day=1)
+    create_subtask(
+        task=task,
+        title="Subtask with status 'Done' and deadline_day -3",
+        description="Create presentation slides",
+        status=Status.DONE,
+        deadline_day=-3)
 
 def create_subtask(task, title, description, status, deadline_day):
     subtask = SubTask.objects.create(
@@ -106,8 +112,9 @@ def change_subtasks():
 Удаление записей:
 Удалите задачу "Prepare presentation" и все ее подзадачи.
 """
-def delete_task_with_subtasks():
-    deleted, _ = Task.objects.filter(title="Prepare presentation").delete()
+def delete_task_with_subtasks(task):
+    deleted, _ = task.delete()
+    # deleted, _ = Task.objects.filter(title="Prepare presentation").delete()
     if deleted:
         print(f'Deleted {deleted} records.')
     else:
