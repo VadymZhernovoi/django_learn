@@ -108,7 +108,7 @@ def change_task():
 
 def change_subtasks_1_2(subtask_1, subtask_2):
     deadline_old = subtask_1.deadline
-    SubTask.objects.filter(title=subtask_1.title).update(deadline=F('deadline') + timedelta(days=-2))
+    SubTask.objects.filter(title=subtask_1.title).update(deadline=F('deadline') - timedelta(days=2))
     subtask_up = SubTask.objects.get(title=subtask_1.title)
     print(f'Updated subtask "{subtask_1.title}" - older deadline: {deadline_old}, new deadline: {subtask_up.deadline}.')
 
