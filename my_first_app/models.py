@@ -1,5 +1,16 @@
 from django.db import models
 from .enums import Status
+from django.utils.translation import gettext_lazy as _
+
+class TimeStampedModel(models.Model):
+    """
+    Abstract model that provides created_at and updated_at timestamps.
+    """
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
+
+    class Meta:
+        abstract = True
 
 class Category(models.Model):
     """
@@ -20,7 +31,7 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-class Task(models.Model):
+class Task(TimeStampedModel):
     """
     Задача для выполнения.
     """
@@ -28,7 +39,7 @@ class Task(models.Model):
     description = models.TextField(blank=True, verbose_name="Описание задачи")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.NEW, verbose_name="Статус задачи")
     deadline = models.DateTimeField(verbose_name="Дата и время дедлайн")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
+    # created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
     categories = models.ManyToManyField(Category, related_name="tasks", blank=True)
 
     class Meta:
@@ -50,7 +61,7 @@ class Task(models.Model):
         return f'{self.title}'
 
 
-class SubTask(models.Model):
+class SubTask(TimeStampedModel):
     """
     Отдельная часть основной задачи (Task).
     """
@@ -58,7 +69,7 @@ class SubTask(models.Model):
     description = models.TextField(null=True, blank=True, verbose_name="Описание подзадачи")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.NEW, verbose_name="Статус подзадачи")
     deadline = models.DateTimeField(verbose_name="Дата и время дедлайн")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
+    # created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
     task = models.ForeignKey(Task, related_name="subtasks", on_delete=models.CASCADE, null=True, verbose_name="Задача")
 
     class Meta:

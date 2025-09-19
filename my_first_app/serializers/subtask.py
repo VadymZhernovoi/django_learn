@@ -1,0 +1,40 @@
+from django.utils import timezone
+from rest_framework import serializers
+from my_first_app.models import SubTask, Task
+
+
+"""
+Создайте SubTaskCreateSerializer, в котором поле created_at будет доступно только для чтения (read_only).
+Шаги для выполнения:
+Определите SubTaskCreateSerializer в файле serializers.py.
+Переопределите поле created_at как read_only."""
+class SubTaskCreateSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(read_only=True)
+    task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
+
+    class Meta:
+        model = SubTask
+        fields = ["id", "title", "description", "status", "deadline", "task", "created_at"]
+
+    def validate_deadline(self, value):
+        """
+        Дополнительно проверяет, чтобы дата deadline не могла быть в прошлом
+        :param value:
+        :return:
+        """
+        now = timezone.now()
+        if value <= now:
+            raise serializers.ValidationError("Deadline не может быть в прошлом.")
+
+        return value
+
+class SubTaskSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(read_only=True)
+    task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
+
+    class Meta:
+        model = SubTask
+        #fields = '__all__'
+        fields = ["id", "title", "description", "status", "deadline", "task", "created_at", "updated_at"]
+
+
