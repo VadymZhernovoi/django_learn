@@ -13,7 +13,7 @@ from my_first_app.serializers.subtask import SubTaskSerializer
 class TaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
-        fields = ("id", "title", "description", "status", "deadline")
+        fields = ("id", "title", "description", "status", "deadline", "created_at")
 
     def validate_deadline(self, value):
         """

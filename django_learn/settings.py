@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'my_first_app.apps.MyFirstAppConfig',
     'rest_framework',
+    'django_filters',
 ]
 
 MIDDLEWARE = [

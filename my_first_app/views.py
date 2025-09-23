@@ -1,6 +1,7 @@
 from django.db.models import Count
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status as http_status
 from django.utils import timezone
@@ -12,10 +13,71 @@ from django_learn.settings import PAGE_SIZE
 from my_first_app.models import Task, SubTask
 from my_first_app.serializers.subtask import SubTaskCreateSerializer, SubTaskSerializer
 from my_first_app.serializers.task import TaskCreateSerializer, TasksListSerializer, TaskDetailSerializer
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
-def hello(request, name):
+"""
+Задание 1: Замена представлений для задач (Tasks) на Generic Views
+Шаги для выполнения:
+    Замените классы представлений для задач на Generic Views:
+    Используйте ListCreateAPIView для создания и получения списка задач.
+    Используйте RetrieveUpdateDestroyAPIView для получения, обновления и удаления задач.
+Реализуйте фильтрацию, поиск и сортировку:
+    Реализуйте фильтрацию по полям status и deadline.
+    Реализуйте поиск по полям title и description.
+    Добавьте сортировку по полю created_at.
+"""
+class TaskListCreateViewGeneric(ListCreateAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskCreateSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'deadline']
+    search_fields = ['title', 'description']  # Поля для поиска
+    ordering_fields = ['created_at']
 
-    return HttpResponse(f'<h1>Hello, {name}</h1>')
+    def get_serializer_class(self):
+        return TaskCreateSerializer if self.request.method == "POST" else TasksListSerializer
+
+class TaskDetailUpdateDeleteViewGeneric(RetrieveUpdateDestroyAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskDetailSerializer
+    lookup_field = 'pk'
+    # lookup_url_kwarg = 'pk'
+
+    def get_serializer_class(self):
+        return TaskCreateSerializer if self.request.method in {"PUT", "PATCH"} else TasksListSerializer
+
+"""
+Задание 2: Замена представлений для подзадач (SubTasks) на Generic Views
+Шаги для выполнения:
+    Замените классы представлений для подзадач на Generic Views:
+    Используйте ListCreateAPIView для создания и получения списка подзадач.
+    Используйте RetrieveUpdateDestroyAPIView для получения, обновления и удаления подзадач.
+Реализуйте фильтрацию, поиск и сортировку:
+    Реализуйте фильтрацию по полям status и deadline.
+    Реализуйте поиск по полям title и description.
+    Добавьте сортировку по полю created_at.
+"""
+class SubTaskListCreateViewGeneric(ListCreateAPIView):
+    queryset = SubTask.objects.all()
+    serializer_class = SubTaskSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'deadline']
+    search_fields = ['title', 'description']  # Поля для поиска
+    ordering_fields = ['created_at']
+
+    def get_serializer_class(self):
+        return SubTaskCreateSerializer if self.request.method == "POST" else SubTaskSerializer
+
+class SubTaskDetailUpdateDeleteViewGeneric(RetrieveUpdateDestroyAPIView):
+    queryset = SubTask.objects.all()
+    serializer_class = SubTaskSerializer
+    lookup_field = 'pk'
+    # lookup_url_kwarg = 'pk'
+
+    def get_serializer_class(self):
+        return SubTaskCreateSerializer if self.request.method in {"PUT", "PATCH"} else SubTaskSerializer
+
 
 def get_task(pk):
     try:
@@ -30,15 +92,70 @@ def get_subtask(pk):
 
     except SubTask.DoesNotExist:
         raise NotFound(detail=f'Подзадача (id={pk}) не найдена')
-"""
-2. Добавить пагинацию в отображение списка подзадач. На одну страницу должно отображаться не более 5 объектов. 
-    Отображение объектов должно идти в порядке убывания даты (от самого последнего добавленного объекта к самому первому)
-3. Добавить или обновить, если уже есть, эндпоинт на получение списка всех подзадач по названию главной задачи и статусу подзадач.
-        Если фильтр параметры в запросе не передавались - выводить данные по умолчанию, с учётом пагинации.
-        Если бы передан фильтр параметр названия главной задачи - выводить данные по этой главной задаче.
-        Если был передан фильтр параметр конкретного статуса подзадачи - выводить данные по этому статусу.
-        Если были переданы оба фильтра - выводить данные в соответствии с этими фильтрами.
-"""
+
+
+class TaskListCreateView(APIView):
+    def get(self, request, *args, **kwargs):
+        filters = {}
+        week_day = request.query_params.get('week_day', None)
+        if week_day is not None:
+            filters['deadline__week_day'] = week_day
+
+        if filters:
+            tasks = Task.objects.filter(**filters).order_by('-created_at')
+            if tasks.count() == 0:
+                return Response({"message": f"По вашему запросу {dict(request.query_params)} данные не найдены."}, status=http_status.HTTP_204_NO_CONTENT)
+        else:
+            tasks = Task.objects.all().order_by('-created_at')
+
+        serializer = TaskDetailSerializer(tasks, many=True)
+
+        return Response(serializer.data, status=http_status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        serializer = TaskDetailSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=http_status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
+
+
+class TaskDetailUpdateDeleteView(APIView):
+    def get(self, request, pk):
+        task = get_task(pk)
+        serializer = TaskDetailSerializer(task)
+
+        return Response(serializer.data, status=http_status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        task = get_task(pk)
+        serializer = TaskCreateSerializer(task, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        task = get_task(pk)
+        serializer = TaskDetailSerializer(task, data=request.data, partial=True)  # частичное
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=http_status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        task = get_task(pk)
+        task.delete()
+
+        return Response({"message": f"Deleted Task (id={pk}) success"}, status=http_status.HTTP_204_NO_CONTENT)
+
+
 class SubTaskListCreateView(APIView, PageNumberPagination):
 
     def get(self, request, *args, **kwargs):
@@ -49,7 +166,7 @@ class SubTaskListCreateView(APIView, PageNumberPagination):
 
         task_name = request.query_params.get('task_name', None)
         if task_name is not None:
-            filters['task__title__istartswith'] = task_name # c istartswith, думаю, будет удобнее искать
+            filters['task__title__istartswith'] = task_name  # c istartswith, думаю, будет удобнее искать
 
         status = request.query_params.get('status', None)
         if status is not None:
@@ -119,73 +236,6 @@ class SubTaskDetailUpdateDeleteView(APIView):
         subtask.delete()
 
         return Response({"message": f"Deleted Subtask (id={pk}) success"}, status=http_status.HTTP_204_NO_CONTENT)
-"""
-Написать, или обновить, если уже есть, эндпоинт на получение списка всех задач по дню недели.
-Если никакой параметр запроса не передавался - по умолчанию выводить все записи.
-Если был передан день недели (например вторник) - выводить список задач только на этот день недели.
-
-"""
-class TaskListCreateView(APIView):
-
-    def get(self, request, *args, **kwargs):
-        filters = {}
-        week_day = request.query_params.get('week_day', None)
-        if week_day is not None:
-            filters['deadline__week_day'] = week_day
-
-        if filters:
-            tasks = Task.objects.filter(**filters).order_by('-created_at')
-            if tasks.count() == 0:
-                return Response({"message": f"По вашему запросу {dict(request.query_params)} данные не найдены."}, status=http_status.HTTP_204_NO_CONTENT)
-        else:
-            tasks = Task.objects.all().order_by('-created_at')
-
-        serializer = TaskDetailSerializer(tasks, many=True)
-
-        return Response(serializer.data, status=http_status.HTTP_200_OK)
-
-    def post(self, request, *args, **kwargs):
-        serializer = TaskDetailSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-
-            return Response(serializer.data, status=http_status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
-
-class TaskDetailUpdateDeleteView(APIView):
-
-    def get(self, request, pk):
-        task = get_task(pk)
-        serializer = TaskDetailSerializer(task)
-
-        return Response(serializer.data, status=http_status.HTTP_200_OK)
-
-    def put(self, request, pk):
-        task = get_task(pk)
-        serializer = TaskCreateSerializer(task, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-
-            return Response(serializer.data)
-
-        return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
-
-    def patch(self, request, pk):
-        task = get_task(pk)
-        serializer = TaskDetailSerializer(task, data=request.data, partial=True)  # частичное
-        if serializer.is_valid():
-            serializer.save()
-
-            return Response(serializer.data, status=http_status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        task = get_task(pk)
-        task.delete()
-
-        return Response({"message": f"Deleted Task (id={pk}) success"}, status=http_status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['POST', 'GET'])
@@ -228,3 +278,5 @@ def tasks_statistic_view(request):
 
     return Response({"Total tasks": tasks_total, "Overdue tasks": tasks_overdue, "Tasks by status": dict(tasks_by_status)})
 
+def hello(request, name):
+    return HttpResponse(f'<h1>Hello, {name}</h1>')
