@@ -1,6 +1,14 @@
 from django.db import models
+from django.utils import timezone
+
 from .enums import Status
 from django.utils.translation import gettext_lazy as _
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+
+        return super().get_queryset().filter(is_deleted=False)
+
 
 class TimeStampedModel(models.Model):
     """
@@ -17,6 +25,16 @@ class Category(models.Model):
     Категория выполнения.
     """
     name = models.CharField(max_length=50, verbose_name="Категория выполнения", unique=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Deleted at"))
+    is_deleted = models.BooleanField(default=False, verbose_name=_("Is deleted"))
+
+    objects = SoftDeleteManager()   # по умолчанию — только не "удалённые"
+    all_objects = models.Manager()  # все (включая удалённые)
+
+    def delete(self, *args, **kwargs):
+        self.deleted_at = timezone.now()
+        self.is_deleted = True
+        self.save(update_fields=['deleted_at', 'is_deleted'])
 
     @property
     def list_tasks(self):
@@ -39,7 +57,6 @@ class Task(TimeStampedModel):
     description = models.TextField(blank=True, verbose_name="Описание задачи")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.NEW, verbose_name="Статус задачи")
     deadline = models.DateTimeField(verbose_name="Дата и время дедлайн")
-    # created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
     categories = models.ManyToManyField(Category, related_name="tasks", blank=True)
 
     class Meta:

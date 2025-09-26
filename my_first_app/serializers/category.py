@@ -1,43 +1,39 @@
 from rest_framework import serializers
 from my_first_app.models import Category
 """
-Создайте сериализатор для категории CategoryCreateSerializer, 
-переопределив методы create и update для проверки уникальности названия категории. 
-Если категория с таким названием уже существует, возвращайте ошибку валидации.
+Задание 2: Реализация мягкого удаления категорий
 Шаги для выполнения:
-    Определите CategoryCreateSerializer в файле serializers.py.
-    Переопределите метод create для проверки уникальности названия категории.
-    Переопределите метод update для аналогичной проверки при обновлении.
+1. Добавьте два новых поля в вашу модель Category, если таких ещё не было.
+    В модели Category добавьте поля is_deleted(Boolean, default False) и deleted_at(DateTime, null=true)
+    Переопределите метод удаления, чтобы он обновлял новые поля к соответствующим значениям: is_deleted=True и дата и время на момент “удаления” записи
+2. Переопределите менеджера модели Category
+    В менеджере модели переопределите метод get_queryset(), чтобы он по умолчанию выдавал только те записи, которые не “удалены” из базы.
 """
+
 class CategoryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
 
-    def validate_title(self, value: str):
+    def validate_name(self, value: str):
         """
-        Дополнительно проверяет, чтобы название категории не было пустым
+        Проверяет, чтобы название категории не было пустым и не повторялось в БД
         :param value:
         :return:
         """
-        value = (value or "").strip() # убираем лишние пробелы
+        value = (value or "").strip()
         if not value:
             raise serializers.ValidationError("Название категории не может быть пустым.")
 
+        qs = Category.objects.filter(name__iexact=value, is_deleted=False)
+
+        if self.instance:  # исключаем из проверки саму себя
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Категория с таким названием уже существует.")
+
         return value
 
-    def create(self, validated_data):
-        """
-        Дополнительно проверяем на уникальность названия категории.
-        :param validated_data:
-        :return:
-        """
-        title = validated_data.pop('title', [])
-        # регистронезависимо ищем категорию с таким названием
-        if Category.objects.filter(title__iexact=title).exists():
-            raise serializers.ValidationError({"title": "Категория с таким названием уже существует."})
-
-        return Category.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         """
@@ -46,13 +42,13 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
         :param validated_data:
         :return:
         """
-        title = validated_data.pop('title', None)
-        title = (title or "").strip() # убираем лишние пробелы
+        name = validated_data.pop('name', None)
+        name = (name or "").strip() # убираем лишние пробелы
         # регистронезависимо ищем категорию с таким названием, исключая из поиска саму себя
-        if Category.objects.filter(title__iexact=title).exclude(pk=instance.pk).exists():
-            raise serializers.ValidationError({"title": "Категория с таким названием уже существует."})
+        if Category.objects.filter(name__iexact=name).exclude(pk=instance.pk).exists():
+            raise serializers.ValidationError({"name": "Категория с таким названием уже существует."})
 
-        instance.title = title
-        instance.save(update_fields=["title"])
+        instance.name = name
+        instance.save(update_fields=["name"])
 
         return instance

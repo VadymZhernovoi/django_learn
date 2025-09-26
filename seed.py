@@ -8,6 +8,7 @@ from django.db.models import F
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Django_library.settings')
 django.setup()
+
 from my_first_app.models import Task, SubTask
 subtasks = (
     {

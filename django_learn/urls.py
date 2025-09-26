@@ -16,14 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-    
+from rest_framework import routers
 
+from my_first_app.views import hello, CategoryViewSet
+
+router = routers.DefaultRouter()
+router.register(r'categories', CategoryViewSet, basename='categories')
 urlpatterns = [
+    path('api/v1/' , include(router.urls)),
     path('admin/', admin.site.urls),
-    path('', include('my_first_app.urls')),
-    path('api/v1/task/<int:pk>', include('my_first_app.urls')),
-    path('api/v1/tasks', include('my_first_app.urls')),
-    path('api/v1/tasks/stats', include('my_first_app.urls')),
-    path('api/v1/subtasks', include('my_first_app.urls')),
-    path('api/v1/subtask/<int:pk>', include('my_first_app.urls')),
+    path('api/v1/', include('my_first_app.urls')),
+    path('<name>', hello, name='hello'),
+    #path('', include('my_first_app.urls')),
 ]

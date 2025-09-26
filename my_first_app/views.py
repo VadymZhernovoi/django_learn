@@ -1,32 +1,49 @@
 from django.db.models import Count
 from django.http import HttpResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
-from rest_framework import status as http_status
+from rest_framework import status as http_status, viewsets, status
 from django.utils import timezone
-from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound
-from rest_framework.pagination import PageNumberPagination
 
-from django_learn.settings import PAGE_SIZE
-from my_first_app.models import Task, SubTask
+from my_first_app.models import Task, SubTask, Category
 from my_first_app.serializers.subtask import SubTaskCreateSerializer, SubTaskSerializer
 from my_first_app.serializers.task import TaskCreateSerializer, TasksListSerializer, TaskDetailSerializer
+from my_first_app.serializers.category import CategoryCreateSerializer
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 
 """
-Задание 1: Замена представлений для задач (Tasks) на Generic Views
+Задание 1: Реализация CRUD для категорий с использованием ModelViewSet
 Шаги для выполнения:
-    Замените классы представлений для задач на Generic Views:
-    Используйте ListCreateAPIView для создания и получения списка задач.
-    Используйте RetrieveUpdateDestroyAPIView для получения, обновления и удаления задач.
-Реализуйте фильтрацию, поиск и сортировку:
-    Реализуйте фильтрацию по полям status и deadline.
-    Реализуйте поиск по полям title и description.
-    Добавьте сортировку по полю created_at.
+    Создайте CategoryViewSet, используя ModelViewSet для CRUD операций.
+    Добавьте маршрут для CategoryViewSet.
+    Добавьте кастомный метод count_tasks используя декоратор @action для подсчета количества задач, связанных с каждой категорией.
 """
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategoryCreateSerializer
+
+    def get_queryset(self):
+        """
+        По умолчанию — вернуть все категории, кроме "удалённых".
+        ?with_deleted=1 — вернуть все (включая "удалённые").
+        """
+        qs = Category.objects.all()
+        if self.request.query_params.get("with_deleted"): # потренироваться
+            qs = Category.all_objects.all()
+
+        return qs
+
+    @action(detail=False, methods=["get"], url_path="count-tasks")
+    def count_tasks(self, request):
+        qs = self.queryset.annotate(task_count=Count("tasks")).values("id", "name", "task_count").order_by("name")
+
+        return Response(list(qs), status=status.HTTP_200_OK)
+
+
+
+
 class TaskListCreateViewGeneric(ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskCreateSerializer
@@ -47,17 +64,6 @@ class TaskDetailUpdateDeleteViewGeneric(RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         return TaskCreateSerializer if self.request.method in {"PUT", "PATCH"} else TasksListSerializer
 
-"""
-Задание 2: Замена представлений для подзадач (SubTasks) на Generic Views
-Шаги для выполнения:
-    Замените классы представлений для подзадач на Generic Views:
-    Используйте ListCreateAPIView для создания и получения списка подзадач.
-    Используйте RetrieveUpdateDestroyAPIView для получения, обновления и удаления подзадач.
-Реализуйте фильтрацию, поиск и сортировку:
-    Реализуйте фильтрацию по полям status и deadline.
-    Реализуйте поиск по полям title и description.
-    Добавьте сортировку по полю created_at.
-"""
 class SubTaskListCreateViewGeneric(ListCreateAPIView):
     queryset = SubTask.objects.all()
     serializer_class = SubTaskSerializer
@@ -274,7 +280,7 @@ def tasks_statistic_view(request):
     now = timezone.now()
     tasks_total = Task.objects.count()
     tasks_by_status = Task.objects.values('status').annotate(cnt=Count('id')).values_list('status', 'cnt').order_by('status')
-    tasks_overdue = Task.objects.filter(deadline__lt=now).exclude(status=http_status.DONE).count()
+    tasks_overdue = Task.objects.filter(deadline__lt=now).exclude(status=http_status.HTTP_200_OK).count()
 
     return Response({"Total tasks": tasks_total, "Overdue tasks": tasks_overdue, "Tasks by status": dict(tasks_by_status)})
 
