@@ -9,9 +9,10 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from environ import Env
+from rest_framework.pagination import CursorPagination
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -96,7 +97,80 @@ else:
         }
     }
 
+"""
+Задание 1:
+Подумать, какой из видов пагинации более безопасный, чтобы не “светить” явно параметры в запросе. 
+Выбрав нужный класс пагинации подключить глобальную пагинацию в проект. 
+На одной странице должно располагаться не более 6 объектов.
+"""
+# выбор очевиден CursorPagination (в вопросе уже всё решено :)
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'my_first_app.pagination.DefaultCursorPagination',
+}
+"""
+Задание 2:
+Подключить систему логирования работы включенного сервера в проект для отслеживания логов работы приложения. 
+Логи должны загружаться следующим образом:
+    Отдельно логи работы включенного сервера с выводом в консоль
+    Отдельно логи HTTP запросов и их статусов в отдельную папку logs в корне проекта  в файл http_logs.log
+    Отдельно логи запросов в базу данных в отдельную папку logs в корне проекта в файл db_logs.log
+"""
+# сделаем директорию для логов
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "console": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s] %(lineno)s %(message)s",
+        },
+        "http": {
+            "format": "[%(asctime)s] %(levelname)s %(message)s",
+        },
+        "db": {
+            "format": "[%(asctime)s] SQL: %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "console",
+        },
+        "http_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "http_logs.log"),
+            "backupCount": 5,
+            "encoding": "utf-8",
+            "formatter": "http",
+        },
+        "db_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "db_logs.log"),
+            "backupCount": 5,
+            "encoding": "utf-8",
+            "formatter": "db",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console", "http_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["db_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 

@@ -2,17 +2,18 @@ from django.db.models import Count
 from django.http import HttpResponse
 from rest_framework.decorators import api_view, action
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
-from rest_framework import status as http_status, viewsets, status
+from rest_framework import status as http_status, viewsets, status, generics
 from django.utils import timezone
-
-from my_first_app.models import Task, SubTask, Category
-from my_first_app.serializers.subtask import SubTaskCreateSerializer, SubTaskSerializer
-from my_first_app.serializers.task import TaskCreateSerializer, TasksListSerializer, TaskDetailSerializer
-from my_first_app.serializers.category import CategoryCreateSerializer
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 
+from my_first_app.models import Task, SubTask, Category
+from my_first_app.pagination import DefaultCursorPagination
+from my_first_app.serializers.subtask import SubTaskCreateSerializer, SubTaskSerializer
+from my_first_app.serializers.task import TaskCreateSerializer, TasksListSerializer, TaskDetailSerializer
+from my_first_app.serializers.category import CategoryCreateSerializer
 """
 Задание 1: Реализация CRUD для категорий с использованием ModelViewSet
 Шаги для выполнения:
@@ -20,9 +21,14 @@ from django_filters.rest_framework import DjangoFilterBackend
     Добавьте маршрут для CategoryViewSet.
     Добавьте кастомный метод count_tasks используя декоратор @action для подсчета количества задач, связанных с каждой категорией.
 """
+class CategoryCursorPagination(CursorPagination):
+    page_size = 2
+    ordering = '-name'
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoryCreateSerializer
+    pagination_class = CategoryCursorPagination # т.к. у Category нет смысла сортировать по created_at, делаем отдельно пагинацию
 
     def get_queryset(self):
         """
@@ -42,15 +48,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return Response(list(qs), status=status.HTTP_200_OK)
 
 
-
-
-class TaskListCreateViewGeneric(ListCreateAPIView):
+class TaskListCreateViewGeneric(generics.ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskCreateSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'deadline']
     search_fields = ['title', 'description']  # Поля для поиска
     ordering_fields = ['created_at']
+    pagination_class = DefaultCursorPagination # как не пробовал, без этого никак. Глобально работает только с viewsets.ModelViewSet
 
     def get_serializer_class(self):
         return TaskCreateSerializer if self.request.method == "POST" else TasksListSerializer
@@ -64,13 +69,14 @@ class TaskDetailUpdateDeleteViewGeneric(RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         return TaskCreateSerializer if self.request.method in {"PUT", "PATCH"} else TasksListSerializer
 
-class SubTaskListCreateViewGeneric(ListCreateAPIView):
-    queryset = SubTask.objects.all()
+class SubTaskListCreateViewGeneric(generics.ListCreateAPIView):
+    queryset = SubTask.objects.all().order_by("created_at")
     serializer_class = SubTaskSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'deadline']
     search_fields = ['title', 'description']  # Поля для поиска
     ordering_fields = ['created_at']
+    pagination_class = DefaultCursorPagination # как не пробовал, без этого никак. Глобально работает только с viewsets.ModelViewSet
 
     def get_serializer_class(self):
         return SubTaskCreateSerializer if self.request.method == "POST" else SubTaskSerializer
