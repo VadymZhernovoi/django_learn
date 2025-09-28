@@ -10,7 +10,7 @@ from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 
 from my_first_app.models import Task, SubTask, Category
-from my_first_app.pagination import DefaultCursorPagination
+from my_first_app.pagination import DefaultCursorPagination, CategoryCursorPagination
 from my_first_app.serializers.subtask import SubTaskCreateSerializer, SubTaskSerializer
 from my_first_app.serializers.task import TaskCreateSerializer, TasksListSerializer, TaskDetailSerializer
 from my_first_app.serializers.category import CategoryCreateSerializer
@@ -21,10 +21,6 @@ from my_first_app.serializers.category import CategoryCreateSerializer
     Добавьте маршрут для CategoryViewSet.
     Добавьте кастомный метод count_tasks используя декоратор @action для подсчета количества задач, связанных с каждой категорией.
 """
-class CategoryCursorPagination(CursorPagination):
-    page_size = 2
-    ordering = '-name'
-
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoryCreateSerializer

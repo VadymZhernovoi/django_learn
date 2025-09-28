@@ -161,12 +161,12 @@ LOGGING = {
         },
         "django.server": {
             "handlers": ["console", "http_file"],
-            "level": "INFO",
+            "level": "WARNING",
             "propagate": False,
         },
         "django.db.backends": {
             "handlers": ["db_file"],
-            "level": "DEBUG",
+            "level": "ERROR",
             "propagate": False,
         },
     },
