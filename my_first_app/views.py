@@ -1,36 +1,25 @@
 from django.db.models import Count
 from django.http import HttpResponse
-from rest_framework.authentication import get_authorization_header
 from rest_framework.decorators import api_view, action
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status as http_status, viewsets, status, generics, mixins
 from django.utils import timezone
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.views import APIView
-from django.conf import settings
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from my_first_app.models import Task, SubTask, Category
-from my_first_app.pagination import DefaultCursorPagination, CategoryCursorPagination
+from my_first_app.pagination import CategoryCursorPagination
 from my_first_app.serializers.subtask import SubTaskCreateSerializer, SubTaskSerializer
 from my_first_app.serializers.task import TaskCreateSerializer, TasksListSerializer, TaskDetailSerializer
 from my_first_app.serializers.category import CategoryCreateSerializer
-"""
-Задание 1: Реализация CRUD для категорий с использованием ModelViewSet
-Шаги для выполнения:
-    Создайте CategoryViewSet, используя ModelViewSet для CRUD операций.
-    Добавьте маршрут для CategoryViewSet.
-    Добавьте кастомный метод count_tasks используя декоратор @action для подсчета количества задач, связанных с каждой категорией.
-"""
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Category.objects.all()
     serializer_class = CategoryCreateSerializer
     pagination_class = CategoryCursorPagination # т.к. у Category нет смысла сортировать по created_at, делаем отдельно пагинацию
-    permission_classes = [IsAuthenticatedOrReadOnly]
     def get_queryset(self):
         """
         По умолчанию — вернуть все категории, кроме "удалённых".
@@ -50,7 +39,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class TaskListCreateViewGeneric(generics.ListCreateAPIView):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     queryset = Task.objects.all()
     serializer_class = TaskCreateSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -58,15 +47,17 @@ class TaskListCreateViewGeneric(generics.ListCreateAPIView):
     search_fields = ['title', 'description']
     ordering_fields = ['created_at']
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
     def get_serializer_class(self):
         return TaskCreateSerializer if self.request.method == "POST" else TasksListSerializer
 
 class TaskDetailUpdateDeleteViewGeneric(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAdminUser]
     queryset = Task.objects.all()
     serializer_class = TaskDetailSerializer
     lookup_field = 'pk'
-    permission_classes = [IsAdminUser]
 
     def get_serializer_class(self):
         return TaskCreateSerializer if self.request.method in {"PUT", "PATCH"} else TasksListSerializer
@@ -80,6 +71,8 @@ class SubTaskListCreateViewGeneric(generics.ListCreateAPIView):
     search_fields = ['title', 'description']  # Поля для поиска
     ordering_fields = ['created_at']
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
     def get_serializer_class(self):
         return SubTaskCreateSerializer if self.request.method == "POST" else SubTaskSerializer
@@ -89,7 +82,6 @@ class SubTaskDetailUpdateDeleteViewGeneric(RetrieveUpdateDestroyAPIView):
     serializer_class = SubTaskSerializer
     permission_classes = [IsAdminUser]
     lookup_field = 'pk'
-    # lookup_url_kwarg = 'pk'
 
     def get_serializer_class(self):
         return SubTaskCreateSerializer if self.request.method in {"PUT", "PATCH"} else SubTaskSerializer
