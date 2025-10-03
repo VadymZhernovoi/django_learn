@@ -17,15 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from my_first_app.views import hello, CategoryViewSet
+from my_first_app.views import hello
 
-router = routers.DefaultRouter()
-router.register(r'categories', CategoryViewSet, basename='categories')
 urlpatterns = [
-    path('api/v1/' , include(router.urls)),
-    path('admin/', admin.site.urls),
+    path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+
     path('api/v1/', include('my_first_app.urls')),
-    path('<name>', hello, name='hello'),
-    #path('', include('my_first_app.urls')),
+    path('admin/', admin.site.urls),
+    #path('<name>', hello, name='hello'),
 ]

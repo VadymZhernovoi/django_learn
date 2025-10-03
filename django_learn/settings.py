@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from environ import Env
+from datetime import timedelta
 from rest_framework.pagination import CursorPagination
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    #"django_learn.middleware.log_auth_header",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -97,24 +99,18 @@ else:
         }
     }
 
-"""
-Задание 1:
-Подумать, какой из видов пагинации более безопасный, чтобы не “светить” явно параметры в запросе. 
-Выбрав нужный класс пагинации подключить глобальную пагинацию в проект. 
-На одной странице должно располагаться не более 6 объектов.
-"""
-# выбор очевиден CursorPagination (в вопросе уже всё решено :)
+
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     'DEFAULT_PAGINATION_CLASS': 'my_first_app.pagination.DefaultCursorPagination',
 }
-"""
-Задание 2:
-Подключить систему логирования работы включенного сервера в проект для отслеживания логов работы приложения. 
-Логи должны загружаться следующим образом:
-    Отдельно логи работы включенного сервера с выводом в консоль
-    Отдельно логи HTTP запросов и их статусов в отдельную папку logs в корне проекта  в файл http_logs.log
-    Отдельно логи запросов в базу данных в отдельную папку logs в корне проекта в файл db_logs.log
-"""
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+
 # сделаем директорию для логов
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
