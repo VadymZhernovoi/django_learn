@@ -21,6 +21,7 @@ from .permissions import IsOwnerOrAdminOrReadOnly
 resp_401 = openapi.Response('Unauthorized')
 resp_403 = openapi.Response('Forbidden')
 JWT_SECURITY = [{"JWT": []}]
+
 class UserTaskListView(ListAPIView):
     serializer_class = TasksListSerializer
     permission_classes = [IsAuthenticated]
