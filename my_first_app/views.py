@@ -57,7 +57,6 @@ class TaskListCreateViewGeneric(generics.ListCreateAPIView):
     filterset_fields = ['status', 'deadline']
     search_fields = ['title', 'description']
     ordering_fields = ['created_at']
-    #pagination_class = DefaultCursorPagination # как не пробовал, без этого никак. Глобально работает только с viewsets.ModelViewSet
 
 
     def get_serializer_class(self):
@@ -80,7 +79,6 @@ class SubTaskListCreateViewGeneric(generics.ListCreateAPIView):
     filterset_fields = ['status', 'deadline']
     search_fields = ['title', 'description']  # Поля для поиска
     ordering_fields = ['created_at']
-    # pagination_class = DefaultCursorPagination # как не пробовал, без этого никак. Глобально работает только с viewsets.ModelViewSet
 
 
     def get_serializer_class(self):

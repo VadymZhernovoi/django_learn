@@ -8,7 +8,7 @@ class MyFirstAppConfig(AppConfig):
     verbose_name = "Менеджер задач"
 
     # Пришлось форснуть перезагрузку DRF при старте приложения
-    # без этого все мои глобальные настройки терялись
+    # без этого все мои глобальные настройки (JWTAuthentication и CursorPagination) терялись
     # rest_framework.settings.api_settings кем-то кэшируется до того, как мой REST_FRAMEWORK читается
     def ready(self):
         # Перечитаем глобальные настройки DRF
