@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
@@ -59,12 +60,15 @@ class Task(TimeStampedModel):
     deadline = models.DateTimeField(verbose_name="Дата и время дедлайн")
     categories = models.ManyToManyField(Category, related_name="tasks", blank=True)
 
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name=_("Owner"))
+
     class Meta:
         db_table = 'task_manager_task'
         verbose_name = 'Задача'
         verbose_name_plural = 'Задачи'
         ordering = ['-created_at']
         unique_together = ('title',)
+        permissions = [("can_task_owner", "Can Task owner")]
 
     @property
     def list_categories(self):
@@ -86,8 +90,9 @@ class SubTask(TimeStampedModel):
     description = models.TextField(null=True, blank=True, verbose_name="Описание подзадачи")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.NEW, verbose_name="Статус подзадачи")
     deadline = models.DateTimeField(verbose_name="Дата и время дедлайн")
-    # created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время создания")
     task = models.ForeignKey(Task, related_name="subtasks", on_delete=models.CASCADE, null=True, verbose_name="Задача")
+
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name=_("Owner"))
 
     class Meta:
         db_table = 'task_manager_subtask'
@@ -95,6 +100,7 @@ class SubTask(TimeStampedModel):
         verbose_name_plural = 'Подзадачи'
         ordering = ['created_at']
         unique_together = ('title',)
+        permissions = [("can_subtask_owner", "Can Subtask owner")]
 
     def __str__(self):
         return f'{self.title}'

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'my_first_app.apps.MyFirstAppConfig',
     'rest_framework',
     'django_filters',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -109,6 +110,18 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+SWAGGER_SETTINGS = {
+    "USE_SESSION_AUTH": False,
+    "SECURITY_DEFINITIONS": {
+        "JWT": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": 'JWT аутентификация. Формат: **Bearer <access_token>**',
+        }
+    },
+    "DEFAULT_SECURITY": [{"JWT": []}],
 }
 
 # сделаем директорию для логов

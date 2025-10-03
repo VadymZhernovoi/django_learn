@@ -3,18 +3,14 @@ from rest_framework import serializers
 from my_first_app.models import SubTask, Task
 
 
-"""
-Создайте SubTaskCreateSerializer, в котором поле created_at будет доступно только для чтения (read_only).
-Шаги для выполнения:
-Определите SubTaskCreateSerializer в файле serializers.py.
-Переопределите поле created_at как read_only."""
 class SubTaskCreateSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
 
     class Meta:
         model = SubTask
-        fields = ["id", "title", "description", "status", "deadline", "task", "created_at"]
+        fields = ["id", "title", "description", "status", "deadline", "task", "created_at", "owner"]
+        read_only_fields = ('owner',)
 
     def validate_deadline(self, value):
         """
@@ -34,7 +30,6 @@ class SubTaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SubTask
-        #fields = '__all__'
-        fields = ["id", "title", "description", "status", "deadline", "task", "created_at", "updated_at"]
-
+        fields = ["id", "title", "description", "status", "deadline", "task", "created_at", "updated_at", "owner"]
+        read_only_fields = ('owner',)
 

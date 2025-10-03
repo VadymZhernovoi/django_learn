@@ -3,11 +3,13 @@ from rest_framework import routers
 
 from my_first_app.views import (CategoryViewSet, TaskDetailUpdateDeleteViewGeneric, TaskListCreateViewGeneric,
                                 SubTaskListCreateViewGeneric, SubTaskDetailUpdateDeleteViewGeneric,
-                                tasks_statistic_view)
+                                tasks_statistic_view, UserTaskListView)
+
 
 router = routers.DefaultRouter()
 router.register(r'categories', CategoryViewSet, basename='categories')
 urlpatterns = [
+    path('user-tasks/', UserTaskListView.as_view(), name="user-tasks-list"),
     path('tasks/', TaskListCreateViewGeneric.as_view(), name="tasks-list-create"),
     path('tasks/<int:pk>/', TaskDetailUpdateDeleteViewGeneric.as_view(), name="task-detail-update"),
     path('subtasks/', SubTaskListCreateViewGeneric.as_view(), name='subtask-list-create'),
