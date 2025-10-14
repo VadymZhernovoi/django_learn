@@ -13,3 +13,5 @@ class MyFirstAppConfig(AppConfig):
     def ready(self):
         # Перечитаем глобальные настройки DRF
         api_settings.reload()
+        # подключаем функции-обработчики к сигналам
+        import my_first_app.signals

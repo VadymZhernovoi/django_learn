@@ -80,6 +80,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'django_learn.wsgi.application'
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = "no-reply@example.com"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
